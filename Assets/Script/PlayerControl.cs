@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 public class PlayerControl : MonoBehaviour
@@ -11,7 +12,11 @@ public class PlayerControl : MonoBehaviour
         fly
     };
 
+    //유저정보
     public playerstate state;
+    public TextMesh NickName;
+    Vector3 oldPos;
+
 
     //땅에 닫고 있는가?
     public bool checkGround = true, groundDelays;
@@ -26,16 +31,26 @@ public class PlayerControl : MonoBehaviour
     public float jumpPower;
 
     //이동 속도
-    public float moveSpeed;
+    public float basicSpeed, moveSpeed;
 
     //조작 가능한가?
-    public bool inputed;
+    public bool inputed, nuckbacked, dashed, boostered, isPlayer;
+    public int dir; //왼 4 오른6
 
     //효과음 리스트
     public AudioClip[] audioclips;
 
     //조작 빈도
     public float h, v;
+
+    //대쉬 , 부스터
+    public float dashNum, boosterNum;
+    public bool dashUPed;
+    public GameObject boosterLine;
+
+
+    //게이지 관련
+    public Slider dashSlider, boosterSlider;
 
 
     //캐싱 컴포넌트
@@ -54,24 +69,51 @@ public class PlayerControl : MonoBehaviour
         ani = tr.GetChild(0).GetComponent<Animator>();
         aud = GetComponent<AudioSource>();
         spr = GetComponent<SpriteRenderer>();
+
+        DashManager(0);
+        BoosterManager(0);
     }
 
     // Update is called once per frame
     void Update()
     {
         // 조작 가능인 경우 조작 빈도를 대입
-        if (inputed)
+        if (inputed && isPlayer)
         {
             InputMoveMent();
-            if (Input.GetKeyDown(KeyCode.Space) && grounded && !jumped)
+
+            if (Input.GetKeyDown(KeyCode.LeftControl) && boosterNum >= 100)
+            {
+                StartCoroutine("BoosterOn");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space) && grounded && !jumped && state != playerstate.fly)
             {
                 Jump();
                 jumped = true;
             }
-            else if (Input.GetKeyDown(KeyCode.Space) && !grounded && jumped)
+            else if (Input.GetKeyDown(KeyCode.Space) && !grounded && jumped && state != playerstate.fly)
             {
                 Jump();
                 jumped = false;
+            }
+            if (Input.GetKey(KeyCode.Z) && dashNum > 0 && !boostered && Mathf.Abs(Input.GetAxis("Horizontal")) > 0.2f)
+            {
+                if (dashUPed)
+                {
+                    StopCoroutine("DashUp");
+                    dashUPed = false;
+                }
+                Dash();
+            }
+            else if (dashed)
+            {
+                moveSpeed = basicSpeed;
+                dashed = false;
+                if (!dashUPed)
+                {
+                    StartCoroutine("DashUp");
+                }
             }
         }
 
@@ -80,25 +122,44 @@ public class PlayerControl : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (inputed)
+        if (inputed && isPlayer)
         {
             Move();
         }
-        if (checkGround)
+        if (checkGround && isPlayer)
             IsGround();
+    }
+
+    public void Moving(Vector3 newPos)
+    {
+        if (oldPos != newPos)
+        {
+            transform.position = Vector3.Lerp(oldPos, newPos, 10f);
+            oldPos = transform.position;
+        }
     }
 
     void InputMoveMent()
     {
+
+        if (oldPos != transform.position)
+        {
+            ServerManager.Instance.WriteLine(string.Format("MOVE:{0}:{1}", transform.position.x, transform.position.y));
+            oldPos = transform.position;
+        }
+
+
         if (Mathf.Abs(Input.GetAxis("Horizontal")) > 0.2f)
         {
             if (Input.GetAxis("Horizontal") > 0.2f)
             {
-                tr.localRotation = Quaternion.Euler(0,0,0);
+                tr.localRotation = Quaternion.Euler(0, 0, 0);
+                dir = 6;
             }
-            else if(Input.GetAxis("Horizontal") < -0.2f)
+            else if (Input.GetAxis("Horizontal") < -0.2f)
             {
                 tr.localRotation = Quaternion.Euler(0, 180, 0);
+                dir = 4;
             }
             h = Input.GetAxis("Horizontal");
             state = playerstate.run;
@@ -109,16 +170,25 @@ public class PlayerControl : MonoBehaviour
             state = playerstate.run;
         }
         else {
-            
+
             h = 0;
             v = 0;
+            state = playerstate.idle;
         }
         ani.SetFloat("Run", Mathf.Abs(Input.GetAxis("Horizontal")));
     }
 
     void Move()
     {
-        tr.localPosition += (Vector3)(new Vector2(h,0) * Time.deltaTime * moveSpeed);
+        oldPos = transform.position;
+        tr.localPosition += (Vector3)(new Vector2(h, 0) * Time.deltaTime * moveSpeed);
+    }
+
+    void Dash()
+    {
+        dashed = true;
+        moveSpeed = basicSpeed * 1.5f;
+        DashManager(-1);
     }
 
     void Jump()
@@ -126,30 +196,87 @@ public class PlayerControl : MonoBehaviour
         state = playerstate.jump;
         ++jumpCnt;
 
-        ani.SetInteger("Jump",jumpCnt);   
+        ani.SetInteger("Jump", jumpCnt);
 
 
         if (groundDelays)
             StopCoroutine("groundCkDelay");
 
         StartCoroutine("groundCkDelay");
-        
-        
+
+
         grounded = false;
-        ri.velocity = new Vector2(0,jumpPower);
+        ri.velocity = new Vector2(0, jumpPower);
+
+    }
+
+    public void DashManager(float n)
+    {
+        dashNum += n;
+        dashNum = Mathf.Clamp(dashNum, 0, 100);
+        dashSlider.value = dashNum;
+    }
+
+    public void BoosterManager(float b)
+    {
+        boosterNum += b;
+        boosterNum = Mathf.Clamp(boosterNum, 0, 100);
+        boosterSlider.value = boosterNum;
+    }
+
+    IEnumerator DashUp()
+    {
+        dashUPed = true;
+        while (dashNum < 100 & !dashed)
+        {
+            yield return new WaitForSeconds(0.1f);
+            DashManager(1);
+        }
+    }
+
+    IEnumerator BoosterOn()
+    {
+        Physics2D.IgnoreLayerCollision(9, 11, true);
+        boostered = true;
+        boosterLine.SetActive(true);
+        moveSpeed = basicSpeed * 2.5f;
+        for (int i = 0; i < 100; i++)
+        {
+            BoosterManager(-1);
+            yield return new WaitForSeconds(0.1f);
+        }
+        boostered = false;
+        boosterLine.SetActive(false);
+        moveSpeed = basicSpeed;
+        Physics2D.IgnoreLayerCollision(9, 11, false);
+
     }
 
     void IsGround()
     {
         grounded = Physics2D.OverlapCircle(groundCk.position, groundLength, groundLayer);
-        if (grounded && (jumpCnt > 0))
+        if (grounded && ((jumpCnt >= 0) || state == playerstate.fly))
         {
+            if (nuckbacked)
+            {
+                inputed = true;
+                nuckbacked = false;
+                Physics2D.IgnoreLayerCollision(9, 11, false);
+                ani.SetBool("NuckBack", false);
+            }
             jumped = false;
             jumpCnt = 0;
             ani.SetInteger("Jump", jumpCnt);
             state = playerstate.idle;
+            ani.SetBool("Fly", false);
+        }
+        else if (grounded == false && ri.velocity.y < -8f)
+        {
+            state = playerstate.fly;
+            ani.SetBool("Fly", true);
         }
     }
+
 
     private void OnDrawGizmos()
     {
@@ -166,17 +293,19 @@ public class PlayerControl : MonoBehaviour
         groundDelays = false;
     }
 
-    public void GravityScale(float g) {
-        ri.gravityScale = g;
-    }
-
-    public void GravityScale(float g,float time)
+    public void GravityScale(float g)
     {
         ri.gravityScale = g;
-        StartCoroutine("GravityDelay",time);
     }
 
-    IEnumerator GravityDelay(float time) { 
+    public void GravityScale(float g, float time)
+    {
+        ri.gravityScale = g;
+        StartCoroutine("GravityDelay", time);
+    }
+
+    IEnumerator GravityDelay(float time)
+    {
         yield return new WaitForSeconds(time);
         ri.gravityScale = 1;
     }
@@ -186,7 +315,42 @@ public class PlayerControl : MonoBehaviour
         ri.velocity = v;
     }
 
+    public void NuckBack(float dist)
+    {
+        ani.SetBool("NuckBack", true);
+        nuckbacked = true;
+        inputed = false;
+        BoosterManager(10f);
+        switch (dir)
+        {
+            case 4:
+                ri.velocity = new Vector2(dist, jumpPower);
+                break;
+            case 6:
+                ri.velocity = new Vector2(-dist, jumpPower);
+                break;
+            default: break;
+        }
+        Physics2D.IgnoreLayerCollision(9, 11, true);
 
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.gameObject.CompareTag("Enemy2") && !boostered)
+        {
+            NuckBack(3f);
+        }
+        print("프렐이어 레이어 : " + gameObject.layer + "충돌오브젝트레이어 : " + col.gameObject.layer);
+    }
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.gameObject.CompareTag("Enemy") && col.gameObject.GetComponent<CardWarrior>().down && !boostered)
+        {
+            NuckBack(3f);
+        }
+    }
 
 
 

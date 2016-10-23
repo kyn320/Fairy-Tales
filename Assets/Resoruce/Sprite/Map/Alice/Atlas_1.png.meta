@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: 0ea792eb26195be4b89196924f479067
-timeCreated: 1477014179
+timeCreated: 1477196749
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
@@ -182,9 +182,9 @@ TextureImporter:
       name: Atlas_1_7
       rect:
         serializedVersion: 2
-        x: 1272
+        x: 1368
         y: 1208
-        width: 394
+        width: 298
         height: 480
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -290,8 +290,8 @@ TextureImporter:
         y: 1039
         width: 77
         height: 205
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: -1
@@ -303,8 +303,8 @@ TextureImporter:
         y: 1039
         width: 77
         height: 199
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: -1
@@ -627,7 +627,7 @@ TextureImporter:
         x: 614
         y: 1729
         width: 353
-        height: 110
+        height: 129
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -672,6 +672,45 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: -1
+    - serializedVersion: 2
+      name: Atlas_1_38
+      rect:
+        serializedVersion: 2
+        x: 1272
+        y: 1208
+        width: 96
+        height: 434
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Atlas_1_39
+      rect:
+        serializedVersion: 2
+        x: 1429
+        y: 1267
+        width: 200
+        height: 200
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: Atlas_1_40
+      rect:
+        serializedVersion: 2
+        x: 509
+        y: 98
+        width: 69
+        height: 65
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      tessellationDetail: 0
     outline: []
   spritePackingTag: 
   userData: 

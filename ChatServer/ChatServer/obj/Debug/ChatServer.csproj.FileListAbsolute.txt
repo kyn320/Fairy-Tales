@@ -1,0 +1,12 @@
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\bin\Debug\ChatServer.exe
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\bin\Debug\ChatServer.pdb
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\obj\Debug\ChatServer.csprojResolveAssemblyReference.cache
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\obj\Debug\ChatServer.exe
+C:\Users\bayaba\Desktop\게임서버\ChatServer\ChatServer\obj\Debug\ChatServer.pdb
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\bin\Debug\ChatServer.exe.config
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\obj\Debug\ChatServer.exe
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\obj\Debug\ChatServer.pdb
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\bin\Debug\ChatServer.exe
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\bin\Debug\ChatServer.pdb
+C:\Users\Sunrin\Downloads\ChatDemo\ChatServer\ChatServer\obj\Debug\ChatServer.csprojResolveAssemblyReference.cache
