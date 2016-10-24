@@ -13,7 +13,7 @@ public class PlayerControl : MonoBehaviour
     };
 
     //유저정보
-    public playerstate state;
+    public playerstate state, oldState;
     public TextMesh NickName;
     Vector3 oldPos;
 
@@ -91,11 +91,13 @@ public class PlayerControl : MonoBehaviour
             {
                 Jump();
                 jumped = true;
+                ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 2));
             }
             else if (Input.GetKeyDown(KeyCode.Space) && !grounded && jumped && state != playerstate.fly)
             {
                 Jump();
                 jumped = false;
+                ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 3));
             }
             if (Input.GetKey(KeyCode.Z) && dashNum > 0 && !boostered && Mathf.Abs(Input.GetAxis("Horizontal")) > 0.2f)
             {
@@ -126,16 +128,41 @@ public class PlayerControl : MonoBehaviour
         {
             Move();
         }
-        if (checkGround && isPlayer)
+        if (checkGround)
             IsGround();
     }
 
-    public void Moving(Vector3 newPos)
+    public void Moving(Vector3 newPos, int dir)
     {
         if (oldPos != newPos)
         {
             transform.position = Vector3.Lerp(oldPos, newPos, 10f);
             oldPos = transform.position;
+            switch (dir)
+            {
+                case 4:
+                    tr.localRotation = Quaternion.Euler(0, 180, 0);
+                    dir = 4; break;
+                case 6:
+                    tr.localRotation = Quaternion.Euler(0, 0, 0);
+                    dir = 6; break;
+                default: break;
+            }
+        }
+    }
+
+    public void Aning(int a)
+    {
+        // 0 : idle, 1 : run , 2 :  jump , 3 : jump2 , 4 : fly , 5 :  nuckback
+        switch (a)
+        {
+            case 0: ani.SetFloat("Run", 0); break;
+            case 1: ani.SetFloat("Run", 1); break;
+            case 2: ani.SetInteger("Jump", 1); break;
+            case 3: ani.SetInteger("Jump", 2); break;
+            case 4: ani.SetBool("Fly", true); break;
+            case 5: ani.SetBool("NuckBack", true); break;
+            default: break;
         }
     }
 
@@ -144,10 +171,9 @@ public class PlayerControl : MonoBehaviour
 
         if (oldPos != transform.position)
         {
-            ServerManager.Instance.WriteLine(string.Format("MOVE:{0}:{1}", transform.position.x, transform.position.y));
+            ServerManager.Instance.WriteLine(string.Format("MOVE:{0}:{1}:{2}", transform.position.x, transform.position.y,dir));
             oldPos = transform.position;
         }
-
 
         if (Mathf.Abs(Input.GetAxis("Horizontal")) > 0.2f)
         {
@@ -163,17 +189,31 @@ public class PlayerControl : MonoBehaviour
             }
             h = Input.GetAxis("Horizontal");
             state = playerstate.run;
+            if (oldState != state)
+            {
+                oldState = state;
+                ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 1));
+            }
         }
         else if (Mathf.Abs(Input.GetAxis("Vertical")) > 0.2f)
         {
             v = Input.GetAxis("Vertical");
             state = playerstate.run;
         }
-        else {
+        else
+        {
 
             h = 0;
             v = 0;
-            state = playerstate.idle;
+            if (state != playerstate.fly)
+            {
+                state = playerstate.idle;
+                if (oldState != state)
+                {
+                    oldState = state;
+                    ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 0));
+                }
+            }
         }
         ani.SetFloat("Run", Mathf.Abs(Input.GetAxis("Horizontal")));
     }
@@ -273,7 +313,12 @@ public class PlayerControl : MonoBehaviour
         else if (grounded == false && ri.velocity.y < -8f)
         {
             state = playerstate.fly;
-            ani.SetBool("Fly", true);
+            if (oldState != state)
+            {
+                oldState = state;
+                ani.SetBool("Fly", true);
+                ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 4));
+            }
         }
     }
 
@@ -318,6 +363,7 @@ public class PlayerControl : MonoBehaviour
     public void NuckBack(float dist)
     {
         ani.SetBool("NuckBack", true);
+        ServerManager.Instance.WriteLine(string.Format("Ani:{0}", 5));
         nuckbacked = true;
         inputed = false;
         BoosterManager(10f);
@@ -341,7 +387,6 @@ public class PlayerControl : MonoBehaviour
         {
             NuckBack(3f);
         }
-        print("프렐이어 레이어 : " + gameObject.layer + "충돌오브젝트레이어 : " + col.gameObject.layer);
     }
 
     void OnTriggerEnter2D(Collider2D col)

@@ -25,7 +25,6 @@ public class EnemySpown : MonoBehaviour
                 pool.Add(g);
             }
             else {
-                print("asd");
                 for (int i = 0; i < pool.Count; i++)
                 {
                     if (pool[i].activeSelf == false)

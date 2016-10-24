@@ -36,31 +36,6 @@ public class ServerManager : MonoBehaviour
         instance = this;
     }
 
-    void Update()
-    {
-        /*
-        if (Input.GetMouseButtonUp(0)) // 터치와 마우스 입력은 동일. 같은 위치에서 뗄시 이동.                               
-        {
-
-            Vector2 wp = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Ray2D ray = new Ray2D(wp, Vector2.zero);
-            RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
-            if (hit.collider != null)
-            {
-                print("hit");
-                if (hit.collider.gameObject.CompareTag("Player") && hit.collider.gameObject.GetComponent<PlayerControl>().isPlayer == false)
-                {
-                    int index = UserList.IndexOf(hit.collider.gameObject.GetComponent<PlayerControl>());
-                    pannel[2].transform.GetChild(0).GetComponent<UI_VSinfo>().index = index;
-                    pannel[2].transform.GetChild(0).GetComponent<UI_VSinfo>().master = true;
-                    pannel[2].transform.GetChild(0).GetChild(0).GetComponent<Text>().text = hit.transform.gameObject.GetComponent<Player>().NickName.text + " 에게 대결을 걸까?";
-                    pannel[2].SetActive(true);
-                }
-            }
-        }
-        */
-    }
-
 
     public void StartConnect() // Canvas의 Start 버튼이 눌렸을때 호출된다.
     {
@@ -161,17 +136,13 @@ public class ServerManager : MonoBehaviour
         return temp;
     }
 
-    public void CreatePlayer(Vector3 pos,  bool isPlayer) //MOVE move, MOVE dir, string nick,int type,
+    public void CreatePlayer(Vector3 pos,int dir , bool isPlayer) //MOVE move, MOVE dir, string nick,int type,
     {
         GameObject temp = Instantiate(UserPrefabs[0], pos, Quaternion.identity) as GameObject;
         PlayerControl player = temp.GetComponent<PlayerControl>();
-
-        /*
-        player.myMove = move;
-        player.SetDirection(dir);
-        */
-        //player.NickName.text = nick;
+        
         player.isPlayer = isPlayer;
+        player.dir = dir;
         if (isPlayer)
             CameraControl.instance.SetPlayer(player);
         else {
@@ -193,13 +164,13 @@ public class ServerManager : MonoBehaviour
         }
         else if (text[0].Equals("USER")) // 내가 아닌 다른 유저의 플레이어를 생성한다.
         {
-            print("asdasd111");
-            CreatePlayer(new Vector3(float.Parse(text[1]), float.Parse(text[2])),false);//int.Parse(text[6]), new Vector3(float.Parse(text[2]), float.Parse(text[3]), 0f), text[1], false); // (MOVE)int.Parse(text[4]), (MOVE)int.Parse(text[5]), text[1], false);
+            print("asdasd222");
+            CreatePlayer(new Vector3(float.Parse(text[1]), float.Parse(text[2]),0f),int.Parse(text[3]), false);//int.Parse(text[6]), new Vector3(float.Parse(text[2]), float.Parse(text[3]), 0f), text[1], false); // (MOVE)int.Parse(text[4]), (MOVE)int.Parse(text[5]), text[1], false);
         }
         else if (text[0].Equals("ADDUSER")) // 나 자신의 플레이어를 생성한다.
         {
             print("asdasd111");
-            CreatePlayer(Vector3.zero, true);//NickName.text, true); //MOVE.STOP, MOVE.DOWN, 
+            CreatePlayer(Vector3.zero, 6, true);//NickName.text, true); //MOVE.STOP, MOVE.DOWN, 
         }
         else if (text[0].Equals("CHAT")) // 채팅 패킷
         {
@@ -209,16 +180,20 @@ public class ServerManager : MonoBehaviour
         else if (text[0].Equals("MOVE")) // 유저 이동 패킷
         {
             int index = int.Parse(text[1]); // 유저 리스트의 인덱스 번호
-            print(index);
-            UserList[index].Moving(new Vector3(float.Parse(text[2]), float.Parse(text[3]), 0f)); // 유저 위치 설정
-            //UserList[index].myMove = (MOVE)int.Parse(text[4]); // 이동 코드 설정
+            UserList[index].Moving(new Vector3(float.Parse(text[2]), float.Parse(text[3]), 0f), int.Parse(text[4])); // 유저 위치 설정
         }
         else if (text[0].Equals("REMOVE")) // 유저가 접속을 끊은 경우
         {
+            print("exit users");
             int index = int.Parse(text[1]); // 유저 리스트의 인덱스 번호
 
             Destroy(UserList[index].gameObject); // 하이어라키에서 유저를 삭제한다.
             UserList.RemoveAt(index); // 유저 리스트에서도 삭제한다.
+        }
+        else if (text[0].Equals("Ani"))
+        {
+            int index = int.Parse(text[1]); // 유저 리스트의 인덱스 번호
+            UserList[index].Aning(int.Parse(text[2]));
         }
         else if (text[0].Equals("TimeUpdate"))
         {

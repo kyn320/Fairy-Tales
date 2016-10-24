@@ -22,7 +22,8 @@ namespace ChatServer
         string nick;
         UserData data = new UserData(); // 소켓, 버퍼, 데이터 길이 등을 저장할 클래스 변수를 생성한다.
         float x = 0, y = 0;
-        MOVE myMove = MOVE.STOP, dir = MOVE.STOP;
+        int dir = 6;
+        int ani = 0; // 0 : idle, 1 : run , 2 :  jump , 3 : jump2 , 4 : fly , 5 :  nuckback
         int avatarType = 0;
 
         public User(Socket socket) // User 클래스의 생성자
@@ -93,15 +94,15 @@ namespace ChatServer
                 {
                     // 나 자신에게 먼저 접속해 있던 모든 유저들의 정보를 보낸다.
                     //WriteLine(string.Format("USER:{0}:{1}:{2}:{3}:{4}:{5}", Server.UserList[i].nick, Server.UserList[i].x, Server.UserList[i].y, (int)Server.UserList[i].myMove, (int)Server.UserList[i].dir, Server.UserList[i].avatarType));
-                    WriteLine(string.Format("USER:{0}:{1}",Server.UserList[i].x,Server.UserList[i].y));
+                    WriteLine(string.Format("USER:{0}:{1}:{2}", Server.UserList[i].x, Server.UserList[i].y,6));
                     // 기존에 접속해 있던 모든 유저들에게 내 정보를 보낸다.
-                    Server.UserList[i].WriteLine(string.Format("USER:{0}:{1}", 0, 0));
+                    Server.UserList[i].WriteLine(string.Format("USER:{0}:{1}:{2}", 0, 0,6));
                     //Server.UserList[i].WriteLine(string.Format("USER:{0}:{1}:{2}:{3}:{4}:{5}", nick, 0, 0, (int)MOVE.STOP, (int)MOVE.DOWN, avatarType));
                 }
                 else
                 {
                     // 나 자신이 접속했음을 알린다.
-                    Console.WriteLine("[Login] "+nick+" is login");
+                    Console.WriteLine("[Login] " + nick + " is login");
                     WriteLine(string.Format("ADDUSER"));
                 }
             }
@@ -115,7 +116,7 @@ namespace ChatServer
             {
                 Server.UserList[i].WriteLine(string.Format("CHAT:{0}:{1}", index, text)); // index 번호의 유저가 채팅을 보냈음을 알린다.
             }
-            Console.WriteLine("[Chat] " + nick + " : "+text);
+            Console.WriteLine("[Chat] " + nick + " : " + text);
         }
 
         void Disconnect()
@@ -140,11 +141,28 @@ namespace ChatServer
             {
                 if (Server.UserList[i] != this) // 내가 아닌 다른 유저들인 경우에만
                 {
-                    Server.UserList[i].WriteLine(string.Format("MOVE:{0}:{1}:{2}", index, x, y)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                    Server.UserList[i].WriteLine(string.Format("MOVE:{0}:{1}:{2}:{3}", index, x, y, dir)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                }
+            }
+
+            //if (myMove > MOVE.STOP) dir = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
+            Console.WriteLine("[Move] " + index + " | x : " + x + " | y :" + y + " | dir "+dir);
+        }
+
+        void Animation()
+        {
+            int index = Server.UserList.IndexOf(this); // 나의 인덱스 번호 얻어오기
+
+            for (int i = 0; i < Server.UserList.Count; i++) // 서버에 접속된 모든 유저 검색
+            {
+                if (Server.UserList[i] != this) // 내가 아닌 다른 유저들인 경우에만
+                {
+                    // 0 : idle, 1 : run , 2 :  jump , 3 : jump2 , 4 : fly , 5 :  nuckback
+                    Server.UserList[i].WriteLine(string.Format("Ani:{0}:{1}", index, ani)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
                 }
             }
             //if (myMove > MOVE.STOP) dir = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
-            Console.WriteLine("[Move] " + index + " | x : "+x+" | y :"+y);
+            Console.WriteLine("[Ani] " + index + " | " + ani);
         }
 
         private void ParsePacket(int length)
@@ -161,11 +179,10 @@ namespace ChatServer
             }
             else if (text[0].Equals("DISCONNECT")) // 유저가 게임을 종료했을때 서버로 보내지는 패킷
             {
-                if (nick.Length > 0)
-                {
-                    Console.WriteLine(nick + " is disconnected");
-                    Disconnect();
-                }
+
+                Console.WriteLine(Server.UserList.IndexOf(this) + " is disconnected");
+                Disconnect();
+
                 data.workSocket.Shutdown(SocketShutdown.Both);
                 data.workSocket.Close();
             }
@@ -173,8 +190,13 @@ namespace ChatServer
             {
                 x = float.Parse(text[1]); // 현재 X좌표
                 y = float.Parse(text[2]); // 현재 Y좌표
-                //myMove = (MOVE)int.Parse(text[3]); // 이동할 방향값
+                dir = int.Parse(text[3]);
                 Move(); // 다른 유저에게 이동 패킷 전송
+            }
+            else if (text[0].Equals("Ani")) // 유저가 보낸 유저 이동 패킷
+            {
+                ani = int.Parse(text[1]); // 애니메이션 전송
+                Animation(); // 다른 유저에게 이동 패킷 전송
             }
             else if (text[0].Equals("CHAT")) // 유저가 보낸 채팅 패킷 처리
             {
